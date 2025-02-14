@@ -9,7 +9,16 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/harshini1203/task-6-flask-cicd.git'
+                echo 'Cloned successfully'
+            }
+        }
+    stage('Login to DockerHub') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-token', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+                    }
+                }
             }
         }
 
@@ -24,10 +33,18 @@ pipeline {
         stage('Run Container') {
             steps {
                 script {
-                    sh 'docker run -d -p 5000:5000 --name $CONTAINER_NAME $IMAGE_NAME'
+                    sh '''
+                        docker stop flask-app-container || true
+                        docker rm flask-app-container || true
+                        docker run -d -p 5000:5000 --name flask-app-container harshini1203/flask-cicd-app
+                        echo "Checking running containers..."
+                        docker ps
+                    '''
                 }
             }
         }
+
+     
 
         stage('Cleanup Previous Containers') {
             steps {
